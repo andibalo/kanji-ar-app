@@ -1,17 +1,15 @@
 import React from 'react';
-import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import type { ScreenRect } from '../utils/coordinateTransform';
 
 type Props = {
   rect: ScreenRect;
   text: string;
-  onPress: () => void;
 };
 
-export function KanjiBoundingBox({ rect, text, onPress }: Props) {
+export function KanjiBoundingBox({ rect, text }: Props) {
   return (
-    <TouchableOpacity
-      onPress={onPress}
+    <View
       style={[
         styles.box,
         {
@@ -21,12 +19,11 @@ export function KanjiBoundingBox({ rect, text, onPress }: Props) {
           height: rect.height,
         },
       ]}
-      activeOpacity={0.7}
     >
       <View style={styles.label}>
         <Text style={styles.labelText}>{text}</Text>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -37,6 +34,7 @@ const styles = StyleSheet.create({
     borderColor: '#FFD700',
     borderRadius: 3,
     backgroundColor: 'rgba(255, 215, 0, 0.15)',
+    overflow: 'visible',
   },
   label: {
     position: 'absolute',

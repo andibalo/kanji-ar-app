@@ -18,6 +18,7 @@ import { useRunOnJS } from 'react-native-worklets-core';
 import { filterKanjiBlocks, type KanjiBlock } from '../utils/kanjiFilter';
 import { TextOverlay } from '../components/TextOverlay';
 import { KanjiDetailCard } from '../components/KanjiDetailCard';
+import { KanjiScrollList } from '../components/KanjiScrollList';
 import { ScanRegionOverlay } from '../components/ScanRegionOverlay';
 import { useJishoLookup } from '../hooks/useJishoLookup';
 import type { BlockData, ScanRegionPercentage } from '../types/recognition';
@@ -57,18 +58,30 @@ export function KanjiCameraScreen() {
   const updateBlocks = useRunOnJS(
     (rawBlocks: BlockData[], region: ScanRegionPercentage, frameW: number, frameH: number) => {
       setFrameSize({ width: frameW, height: frameH });
-      // Convert scan region to frame-space pixel bounds.
-      // blockFrame.x / .y are CENTER coordinates returned by ML Kit.
-      const regionLeft = (parseFloat(region.left) / 100) * frameW;
-      const regionTop = (parseFloat(region.top) / 100) * frameH;
-      const regionRight = regionLeft + (parseFloat(region.width) / 100) * frameW;
-      const regionBottom = regionTop + (parseFloat(region.height) / 100) * frameH;
+      // Convert scan region (screen-space %) to frame-space bounds, accounting for orientation.
+      let regionMinCX: number, regionMaxCX: number, regionMinCY: number, regionMaxCY: number;
+      if (frameW > frameH) {
+        // Landscape frame: frame-x axis maps to screen-y; frame-y axis maps to inverted screen-x
+        const topPct    = parseFloat(region.top)  / 100;
+        const bottomPct = topPct + parseFloat(region.height) / 100;
+        const leftPct   = parseFloat(region.left) / 100;
+        const rightPct  = leftPct + parseFloat(region.width)  / 100;
+        regionMinCX = topPct    * frameW;
+        regionMaxCX = bottomPct * frameW;
+        regionMinCY = (1 - rightPct) * frameH;
+        regionMaxCY = (1 - leftPct)  * frameH;
+      } else {
+        regionMinCX = (parseFloat(region.left) / 100) * frameW;
+        regionMaxCX = regionMinCX + (parseFloat(region.width)  / 100) * frameW;
+        regionMinCY = (parseFloat(region.top)  / 100) * frameH;
+        regionMaxCY = regionMinCY + (parseFloat(region.height) / 100) * frameH;
+      }
 
       const inRegion = rawBlocks.filter(b => {
         const cx = b.blockFrame.boundingCenterX;
         const cy = b.blockFrame.boundingCenterY;
-        return cx >= regionLeft && cx <= regionRight &&
-          cy >= regionTop && cy <= regionBottom;
+        return cx >= regionMinCX && cx <= regionMaxCX &&
+          cy >= regionMinCY && cy <= regionMaxCY;
       });
 
       const filtered = filterKanjiBlocks(inRegion);
@@ -169,11 +182,13 @@ export function KanjiCameraScreen() {
         frameHeight={frameSize.height}
         previewWidth={previewSize.width}
         previewHeight={previewSize.height}
-        onBlockPress={handleBlockPress}
       />
 
       {/* Resizable scan region with draggable corner handles */}
       <ScanRegionOverlay onRegionChange={handleRegionChange} />
+
+      {/* Horizontal list of detected kanji — rendered above dim panels so chips are tappable */}
+      <KanjiScrollList blocks={blocks} onPress={handleBlockPress} />
 
       {/* Definition card (slides up on tap) */}
       <KanjiDetailCard state={jishoState} onDismiss={reset} />

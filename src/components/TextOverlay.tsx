@@ -10,7 +10,6 @@ type Props = {
   frameHeight: number;
   previewWidth: number;
   previewHeight: number;
-  onBlockPress: (block: KanjiBlock) => void;
 };
 
 export function TextOverlay({
@@ -19,7 +18,6 @@ export function TextOverlay({
   frameHeight,
   previewWidth,
   previewHeight,
-  onBlockPress,
 }: Props) {
   if (frameWidth === 0 || frameHeight === 0) return null;
 
@@ -38,7 +36,6 @@ export function TextOverlay({
             key={`${block.text}-${index}`}
             rect={rect}
             text={block.text}
-            onPress={() => onBlockPress(block)}
           />
         );
       })}

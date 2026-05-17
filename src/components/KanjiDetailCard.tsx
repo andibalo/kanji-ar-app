@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   PanResponder,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { JishoResult } from '../hooks/useJishoLookup';
 
 type LookupState =
@@ -22,6 +23,7 @@ type Props = {
 };
 
 export function KanjiDetailCard({ state, onDismiss }: Props) {
+  const { bottom: bottomInset } = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(300)).current;
   const dragOffset = useRef(new Animated.Value(0)).current;
 
@@ -65,7 +67,10 @@ export function KanjiDetailCard({ state, onDismiss }: Props) {
     <Animated.View
       style={[
         styles.card,
-        { transform: [{ translateY: Animated.add(slideAnim, dragOffset) }] },
+        {
+          paddingBottom: 40 + bottomInset,
+          transform: [{ translateY: Animated.add(slideAnim, dragOffset) }],
+        },
       ]}
       {...panResponder.panHandlers}
     >
