@@ -59,27 +59,36 @@ export function KanjiCameraScreen() {
     (rawBlocks: BlockData[], region: ScanRegionPercentage, frameW: number, frameH: number, previewW: number, previewH: number) => {
       setFrameSize({ width: frameW, height: frameH });
 
-      // Convert each block's center to screen-space (portrait frame, no rotation),
-      // then compare against screen-space region bounds — matches coordinateTransform.ts.
-      const scale = Math.max(previewW / frameW, previewH / frameH);
-      const offsetX = (scale * frameW - previewW) / 2;
-      const offsetY = (scale * frameH - previewH) / 2;
+      // The OCR plugin returns portrait-space coordinates (cx=horizontal, cy=vertical)
+      // regardless of whether the sensor buffer is landscape. Use the shorter frame
+      // dimension as portrait width and longer as portrait height for the aspect-fill scale.
+      const fW = Math.min(frameW, frameH);
+      const fH = Math.max(frameW, frameH);
+      const scale = Math.max(previewW / fW, previewH / fH);
+      const offsetX = (scale * fW - previewW) / 2;
+      const offsetY = (scale * fH - previewH) / 2;
 
-      const leftPx   = parseFloat(region.left) / 100 * previewW;
-      const topPx    = parseFloat(region.top)  / 100 * previewH;
-      const rightPx  = leftPx + parseFloat(region.width)  / 100 * previewW;
-      const bottomPx = topPx  + parseFloat(region.height) / 100 * previewH;
+      const leftPx = parseFloat(region.left) / 100 * previewW;
+      const topPx = parseFloat(region.top) / 100 * previewH;
+      const rightPx = leftPx + parseFloat(region.width) / 100 * previewW;
+      const bottomPx = topPx + parseFloat(region.height) / 100 * previewH;
 
       const inRegion = rawBlocks.filter(b => {
-        const sx = b.blockFrame.boundingCenterX * scale - offsetX;
-        const sy = b.blockFrame.boundingCenterY * scale - offsetY;
+        const cx = b.blockFrame.boundingCenterX;
+        const cy = b.blockFrame.boundingCenterY;
+        const sx = cx * scale - offsetX;
+        const sy = cy * scale - offsetY;
         return sx >= leftPx && sx <= rightPx && sy >= topPx && sy <= bottomPx;
       });
 
+
+      console.log(inRegion, 'in region blocks');
       const filtered = filterKanjiBlocks(inRegion);
       console.log(
         `[KanjiScan] ${rawBlocks.length} raw → ${inRegion.length} in region → ${filtered.length} kanji`,
       );
+
+      console.log(filtered, 'filtered kanji blocks');
       if (filtered.length > 0) {
         console.log('[KanjiScan]', filtered.map(b => b.text).join(' | '));
       }
