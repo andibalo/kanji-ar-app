@@ -23,8 +23,8 @@ import { ScanRegionOverlay } from '../components/ScanRegionOverlay';
 import { useJishoLookup } from '../hooks/useJishoLookup';
 import type { BlockData, ScanRegionPercentage } from '../types/recognition';
 
-// Process ~2 frames per second at 30fps camera
-const FRAME_SKIP = 15;
+// Process ~4 frames per second at 30fps camera
+const FRAME_SKIP = 10;
 
 // Default scan region — centred horizontal band
 const DEFAULT_REGION: ScanRegionPercentage = {
@@ -46,42 +46,34 @@ export function KanjiCameraScreen() {
   const [isScanning, setIsScanning] = useState(true);
 
   const frameCountRef = useRef(0);
+  const previewSizeRef = useRef({ width: 0, height: 0 });
 
   const { state: jishoState, lookup, reset } = useJishoLookup();
   const { scanText } = useTextRecognition({ language: 'japanese' });
 
   // Bridge from the worklet thread back to JS to update React state.
   // NOTE: the library's native scanRegion option only applies when passed at
-  // initialisation (useTextRecognition options), NOT per-frame. It also expects
-  // numeric values (0-100), not percentage strings. Since we need a dynamic
-  // scan region, we scan the full frame and filter blocks by position here.
+  // initialisation (useTextRecognition options), NOT per-frame. Since we need a
+  // dynamic scan region, we scan the full frame and filter blocks by position here.
   const updateBlocks = useRunOnJS(
-    (rawBlocks: BlockData[], region: ScanRegionPercentage, frameW: number, frameH: number) => {
+    (rawBlocks: BlockData[], region: ScanRegionPercentage, frameW: number, frameH: number, previewW: number, previewH: number) => {
       setFrameSize({ width: frameW, height: frameH });
-      // Convert scan region (screen-space %) to frame-space bounds, accounting for orientation.
-      let regionMinCX: number, regionMaxCX: number, regionMinCY: number, regionMaxCY: number;
-      if (frameW > frameH) {
-        // Landscape frame: frame-x axis maps to screen-y; frame-y axis maps to inverted screen-x
-        const topPct    = parseFloat(region.top)  / 100;
-        const bottomPct = topPct + parseFloat(region.height) / 100;
-        const leftPct   = parseFloat(region.left) / 100;
-        const rightPct  = leftPct + parseFloat(region.width)  / 100;
-        regionMinCX = topPct    * frameW;
-        regionMaxCX = bottomPct * frameW;
-        regionMinCY = (1 - rightPct) * frameH;
-        regionMaxCY = (1 - leftPct)  * frameH;
-      } else {
-        regionMinCX = (parseFloat(region.left) / 100) * frameW;
-        regionMaxCX = regionMinCX + (parseFloat(region.width)  / 100) * frameW;
-        regionMinCY = (parseFloat(region.top)  / 100) * frameH;
-        regionMaxCY = regionMinCY + (parseFloat(region.height) / 100) * frameH;
-      }
+
+      // Convert each block's center to screen-space (portrait frame, no rotation),
+      // then compare against screen-space region bounds — matches coordinateTransform.ts.
+      const scale = Math.max(previewW / frameW, previewH / frameH);
+      const offsetX = (scale * frameW - previewW) / 2;
+      const offsetY = (scale * frameH - previewH) / 2;
+
+      const leftPx   = parseFloat(region.left) / 100 * previewW;
+      const topPx    = parseFloat(region.top)  / 100 * previewH;
+      const rightPx  = leftPx + parseFloat(region.width)  / 100 * previewW;
+      const bottomPx = topPx  + parseFloat(region.height) / 100 * previewH;
 
       const inRegion = rawBlocks.filter(b => {
-        const cx = b.blockFrame.boundingCenterX;
-        const cy = b.blockFrame.boundingCenterY;
-        return cx >= regionMinCX && cx <= regionMaxCX &&
-          cy >= regionMinCY && cy <= regionMaxCY;
+        const sx = b.blockFrame.boundingCenterX * scale - offsetX;
+        const sy = b.blockFrame.boundingCenterY * scale - offsetY;
+        return sx >= leftPx && sx <= rightPx && sy >= topPx && sy <= bottomPx;
       });
 
       const filtered = filterKanjiBlocks(inRegion);
@@ -109,7 +101,8 @@ export function KanjiCameraScreen() {
       if (result && result.blocks && result.blocks.length > 0) {
 
         console.log(result, 'scan result');
-        updateBlocks(result.blocks, scanRegion, frame.width, frame.height);
+        updateBlocks(result.blocks, scanRegion, frame.width, frame.height,
+          previewSizeRef.current.width, previewSizeRef.current.height);
       }
     },
     [isScanning, scanText, scanRegion, updateBlocks],
@@ -125,6 +118,7 @@ export function KanjiCameraScreen() {
   const handleLayout = useCallback((e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
     setPreviewSize({ width, height });
+    previewSizeRef.current = { width, height };
   }, []);
 
   const handleRegionChange = useCallback((region: ScanRegionPercentage) => {
@@ -169,7 +163,7 @@ export function KanjiCameraScreen() {
       <Camera
         style={StyleSheet.absoluteFill}
         device={device}
-        isActive
+        isActive={isScanning}
         frameProcessor={frameProcessor}
         onLayout={handleLayout}
         enableZoomGesture={true}
