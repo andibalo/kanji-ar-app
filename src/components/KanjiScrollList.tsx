@@ -1,21 +1,20 @@
 import React from 'react';
 import { FlatList, Pressable, Text, StyleSheet, View } from 'react-native';
-import type { KanjiBlock } from '../utils/kanjiFilter';
 
 type Props = {
-  blocks: KanjiBlock[];
-  onPress: (block: KanjiBlock) => void;
+  words: string[];
+  onPress: (word: string) => void;
 };
 
-export function KanjiScrollList({ blocks, onPress }: Props) {
-  if (blocks.length === 0) return null;
+export function KanjiScrollList({ words, onPress }: Props) {
+  if (words.length === 0) return null;
 
   return (
     <View style={styles.container}>
       <FlatList
         horizontal
-        data={blocks}
-        keyExtractor={(item, index) => `${item.text}-${index}`}
+        data={words}
+        keyExtractor={(item, index) => `${item}-${index}`}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
@@ -23,7 +22,7 @@ export function KanjiScrollList({ blocks, onPress }: Props) {
             style={({ pressed }) => [styles.chip, pressed && styles.chipPressed]}
             onPress={() => onPress(item)}
           >
-            <Text style={styles.chipText}>{item.text}</Text>
+            <Text style={styles.chipText}>{item}</Text>
           </Pressable>
         )}
       />

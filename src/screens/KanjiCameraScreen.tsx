@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -16,6 +16,8 @@ import {
 import { useTextRecognition } from 'react-native-vision-camera-ocr-plus';
 import { useRunOnJS } from 'react-native-worklets-core';
 import { filterKanjiBlocks, type KanjiBlock } from '../utils/kanjiFilter';
+import { initTokenizer } from '../utils/kuromojiLoader';
+import { extractKanjiWords } from '../utils/extractWords';
 import { TextOverlay } from '../components/TextOverlay';
 import { KanjiDetailCard } from '../components/KanjiDetailCard';
 import { KanjiScrollList } from '../components/KanjiScrollList';
@@ -39,6 +41,7 @@ export function KanjiCameraScreen() {
   const device = useCameraDevice('back');
 
   const [blocks, setBlocks] = useState<KanjiBlock[]>([]);
+  const [words, setWords] = useState<string[]>([]);
   const [previewSize, setPreviewSize] = useState({ width: 0, height: 0 });
   const [frameSize, setFrameSize] = useState({ width: 720, height: 1280 });
   const [scanRegion, setScanRegion] =
@@ -93,6 +96,8 @@ export function KanjiCameraScreen() {
         console.log('[KanjiScan]', filtered.map(b => b.text).join(' | '));
       }
       setBlocks(filtered);
+      const allWords = [...new Set(filtered.flatMap(b => extractKanjiWords(b.blockText)))];
+      setWords(allWords);
     },
     [],
   );
@@ -117,9 +122,13 @@ export function KanjiCameraScreen() {
     [isScanning, scanText, scanRegion, updateBlocks],
   );
 
-  const handleBlockPress = useCallback(
-    (block: KanjiBlock) => {
-      lookup(block.text);
+  useEffect(() => {
+    initTokenizer().catch(err => console.warn('[Kuromoji] init failed', err));
+  }, []);
+
+  const handleWordPress = useCallback(
+    (word: string) => {
+      lookup(word);
     },
     [lookup],
   );
@@ -133,11 +142,12 @@ export function KanjiCameraScreen() {
   const handleRegionChange = useCallback((region: ScanRegionPercentage) => {
     setScanRegion(region);
     setBlocks([]);
+    setWords([]);
   }, []);
 
   const handleToggleScan = useCallback(() => {
     setIsScanning(prev => {
-      if (prev) setBlocks([]);
+      if (prev) { setBlocks([]); setWords([]); }
       return !prev;
     });
   }, []);
@@ -191,7 +201,7 @@ export function KanjiCameraScreen() {
       <ScanRegionOverlay onRegionChange={handleRegionChange} />
 
       {/* Horizontal list of detected kanji — rendered above dim panels so chips are tappable */}
-      <KanjiScrollList blocks={blocks} onPress={handleBlockPress} />
+      <KanjiScrollList words={words} onPress={handleWordPress} />
 
       {/* Definition card (slides up on tap) */}
       <KanjiDetailCard state={jishoState} onDismiss={reset} />

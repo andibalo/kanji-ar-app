@@ -107,6 +107,12 @@ android {
     }
 }
 
+task copyKuromojiDict(type: Copy) {
+    from "../../node_modules/kuromoji/dict/"
+    into "src/main/assets/kuromoji/"
+}
+preBuild.dependsOn copyKuromojiDict
+
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")

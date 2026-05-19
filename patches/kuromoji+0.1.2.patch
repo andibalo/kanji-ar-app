@@ -1,0 +1,13 @@
+diff --git a/node_modules/kuromoji/src/TokenizerBuilder.js b/node_modules/kuromoji/src/TokenizerBuilder.js
+index 9ef5c6a..285620c 100644
+--- a/node_modules/kuromoji/src/TokenizerBuilder.js
++++ b/node_modules/kuromoji/src/TokenizerBuilder.js
+@@ -18,7 +18,7 @@
+ "use strict";
+ 
+ var Tokenizer = require("./Tokenizer");
+-var DictionaryLoader = require("./loader/NodeDictionaryLoader");
++var DictionaryLoader = require("./loader/BrowserDictionaryLoader");
+ 
+ /**
+  * TokenizerBuilder create Tokenizer instance.
