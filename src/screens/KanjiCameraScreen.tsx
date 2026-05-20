@@ -193,7 +193,7 @@ export function KanjiCameraScreen() {
       <Camera
         style={StyleSheet.absoluteFill}
         device={device}
-        isActive={isFocused && isScanning}
+        isActive={isFocused}
         frameProcessor={frameProcessor}
         onLayout={handleLayout}
         enableZoomGesture={true}

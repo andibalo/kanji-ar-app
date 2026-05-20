@@ -2,6 +2,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Keyboard,
   StyleSheet,
   Text,
   TextInput,
@@ -85,6 +86,7 @@ export function DictionaryScreen() {
 
   const handleSubmit = useCallback(() => {
     search(query);
+    Keyboard.dismiss();
   }, [query, search]);
 
   return (
