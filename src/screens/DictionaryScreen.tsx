@@ -94,7 +94,7 @@ export function DictionaryScreen() {
       <View style={styles.searchRow}>
         <TextInput
           style={styles.input}
-          placeholder="Search kanji, kana, or English…"
+          placeholder="Search in kanji, kana, or English…"
           placeholderTextColor="#666"
           value={query}
           onChangeText={setQuery}

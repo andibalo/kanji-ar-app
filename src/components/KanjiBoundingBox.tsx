@@ -44,6 +44,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 2,
+    display: "none" // TOOD: show later, hide for now
   },
   labelText: {
     color: '#1A1A2E',
