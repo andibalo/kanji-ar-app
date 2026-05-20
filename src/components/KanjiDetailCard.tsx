@@ -68,7 +68,8 @@ export function KanjiDetailCard({ state, onDismiss }: Props) {
       style={[
         styles.card,
         {
-          paddingBottom: 40 + bottomInset,
+          bottom: 56 + bottomInset,
+          paddingBottom: 24,
           transform: [{ translateY: Animated.add(slideAnim, dragOffset) }],
         },
       ]}
@@ -115,7 +116,6 @@ export function KanjiDetailCard({ state, onDismiss }: Props) {
 const styles = StyleSheet.create({
   card: {
     position: 'absolute',
-    bottom: 0,
     left: 0,
     right: 0,
     backgroundColor: '#1A1A2E',

@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-around',
-    backgroundColor: 'rgba(26, 26, 46, 0.92)',
+    backgroundColor: 'rgba(26, 26, 46)',
     paddingTop: 12,
     paddingHorizontal: 24,
     borderTopWidth: StyleSheet.hairlineWidth,
