@@ -6,7 +6,9 @@ import {
   TouchableOpacity,
   StatusBar,
   LayoutChangeEvent,
+  ToastAndroid,
 } from 'react-native';
+import Clipboard from '@react-native-clipboard/clipboard';
 import {
   useCameraDevice,
   useCameraPermission,
@@ -15,6 +17,7 @@ import {
 } from 'react-native-vision-camera';
 import { useTextRecognition } from 'react-native-vision-camera-ocr-plus';
 import { useRunOnJS } from 'react-native-worklets-core';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { filterKanjiBlocks, type KanjiBlock } from '../utils/kanjiFilter';
 import { initTokenizer } from '../utils/kuromojiLoader';
 import { extractKanjiWords } from '../utils/extractWords';
@@ -22,6 +25,7 @@ import { TextOverlay } from '../components/TextOverlay';
 import { KanjiDetailCard } from '../components/KanjiDetailCard';
 import { KanjiScrollList } from '../components/KanjiScrollList';
 import { ScanRegionOverlay } from '../components/ScanRegionOverlay';
+import { BottomNavBar } from '../components/BottomNavBar';
 import { useJishoLookup } from '../hooks/useJishoLookup';
 import type { BlockData, ScanRegionPercentage } from '../types/recognition';
 
@@ -39,6 +43,8 @@ const DEFAULT_REGION: ScanRegionPercentage = {
 export function KanjiCameraScreen() {
   const { hasPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice('back');
+  const navigation = useNavigation();
+  const isFocused = useIsFocused();
 
   const [blocks, setBlocks] = useState<KanjiBlock[]>([]);
   const [words, setWords] = useState<string[]>([]);
@@ -133,6 +139,11 @@ export function KanjiCameraScreen() {
     [lookup],
   );
 
+  const handleWordLongPress = useCallback((word: string) => {
+    Clipboard.setString(word);
+    ToastAndroid.show(`Copied "${word}"`, ToastAndroid.SHORT);
+  }, []);
+
   const handleLayout = useCallback((e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
     setPreviewSize({ width, height });
@@ -178,11 +189,11 @@ export function KanjiCameraScreen() {
     <View style={styles.container}>
       <StatusBar translucent backgroundColor="transparent" />
 
-
+      {/* Camera stops when navigating away (isFocused=false) and resumes on return */}
       <Camera
         style={StyleSheet.absoluteFill}
         device={device}
-        isActive={isScanning}
+        isActive={isFocused && isScanning}
         frameProcessor={frameProcessor}
         onLayout={handleLayout}
         enableZoomGesture={true}
@@ -201,23 +212,18 @@ export function KanjiCameraScreen() {
       <ScanRegionOverlay onRegionChange={handleRegionChange} />
 
       {/* Horizontal list of detected kanji — rendered above dim panels so chips are tappable */}
-      <KanjiScrollList words={words} onPress={handleWordPress} />
+      <KanjiScrollList words={words} onPress={handleWordPress} onLongPress={handleWordLongPress} />
 
       {/* Definition card (slides up on tap) */}
       <KanjiDetailCard state={jishoState} onDismiss={reset} />
 
-      {/* Start / Stop scanning button — top-right */}
-      <TouchableOpacity
-        style={[
-          styles.scanBtn,
-          isScanning ? styles.scanBtnActive : styles.scanBtnStopped,
-        ]}
-        onPress={handleToggleScan}
-      >
-        <Text style={styles.scanBtnText}>
-          {isScanning ? 'Stop Scanning' : 'Start Scanning'}
-        </Text>
-      </TouchableOpacity>
+      {/* Bottom navigation bar */}
+      <BottomNavBar
+        isScanning={isScanning}
+        onToggleScan={handleToggleScan}
+        onDictionary={() => navigation.navigate('Dictionary' as never)}
+        onSettings={() => navigation.navigate('Settings' as never)}
+      />
     </View>
   );
 }
@@ -250,25 +256,5 @@ const styles = StyleSheet.create({
     color: '#1A1A2E',
     fontWeight: 'bold',
     fontSize: 16,
-  },
-  scanBtn: {
-    position: 'absolute',
-    top: 56,
-    right: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    elevation: 4,
-  },
-  scanBtnActive: {
-    backgroundColor: '#FFD700',
-  },
-  scanBtnStopped: {
-    backgroundColor: '#555',
-  },
-  scanBtnText: {
-    color: '#1A1A2E',
-    fontWeight: 'bold',
-    fontSize: 15,
   },
 });

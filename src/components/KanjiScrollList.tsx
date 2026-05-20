@@ -4,9 +4,10 @@ import { FlatList, Pressable, Text, StyleSheet, View } from 'react-native';
 type Props = {
   words: string[];
   onPress: (word: string) => void;
+  onLongPress: (word: string) => void;
 };
 
-export function KanjiScrollList({ words, onPress }: Props) {
+export function KanjiScrollList({ words, onPress, onLongPress }: Props) {
   if (words.length === 0) return null;
 
   return (
@@ -21,6 +22,8 @@ export function KanjiScrollList({ words, onPress }: Props) {
           <Pressable
             style={({ pressed }) => [styles.chip, pressed && styles.chipPressed]}
             onPress={() => onPress(item)}
+            onLongPress={() => onLongPress(item)}
+            delayLongPress={400}
           >
             <Text style={styles.chipText}>{item}</Text>
           </Pressable>
