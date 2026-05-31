@@ -9,7 +9,9 @@ import {
   PanResponder,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Volume2 } from 'lucide-react-native';
 import type { JishoResult } from '../hooks/useJishoLookup';
+import { useTts } from '../hooks/useTts';
 
 type LookupState =
   | { status: 'idle' }
@@ -26,6 +28,7 @@ export function KanjiDetailCard({ state, onDismiss }: Props) {
   const { bottom: bottomInset } = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(300)).current;
   const dragOffset = useRef(new Animated.Value(0)).current;
+  const { speak, speaking } = useTts();
 
   const isVisible = state.status !== 'idle';
 
@@ -91,7 +94,16 @@ export function KanjiDetailCard({ state, onDismiss }: Props) {
 
       {state.status === 'success' && (
         <View style={styles.content}>
-          <Text style={styles.kanji}>{state.data.word}</Text>
+          <View style={styles.kanjiRow}>
+            <Text style={styles.kanji}>{state.data.word}</Text>
+            <TouchableOpacity
+              style={styles.ttsBtn}
+              onPress={() => speak(state.data.reading || state.data.word)}
+              activeOpacity={0.7}
+            >
+              <Volume2 size={24} color={speaking ? '#FFD700' : '#ffffff'} />
+            </TouchableOpacity>
+          </View>
           {!!state.data.reading && (
             <Text style={styles.reading}>{state.data.reading}</Text>
           )}
@@ -145,6 +157,16 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: 8,
+  },
+  kanjiRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  ttsBtn: {
+    padding: 6,
+    paddingTop: 12
+
   },
   kanji: {
     fontSize: 40,

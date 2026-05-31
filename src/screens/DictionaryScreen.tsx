@@ -10,7 +10,9 @@ import {
   View,
 } from 'react-native';
 import axios from 'axios';
+import { Volume2 } from 'lucide-react-native';
 import type { JishoResult } from '../hooks/useJishoLookup';
+import { useTts } from '../hooks/useTts';
 
 type SearchState =
   | { status: 'idle' }
@@ -62,6 +64,7 @@ function useJishoSearch() {
 }
 
 function ResultRow({ item }: { item: JishoResult }) {
+  const { speak, speaking } = useTts();
   return (
     <View style={styles.row}>
       <View style={styles.rowLeft}>
@@ -76,6 +79,13 @@ function ResultRow({ item }: { item: JishoResult }) {
           </View>
         )}
       </View>
+      <TouchableOpacity
+        style={styles.ttsBtn}
+        onPress={() => speak(item.reading || item.word)}
+        activeOpacity={0.7}
+      >
+        <Volume2 size={20} color={speaking ? '#FFD700' : '#ffffff'} />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -224,6 +234,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: 'bold',
     color: '#1A1A2E',
+  },
+  ttsBtn: {
+    alignSelf: 'center',
+    padding: 8,
   },
   separator: {
     height: StyleSheet.hairlineWidth,

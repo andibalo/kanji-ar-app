@@ -7,6 +7,7 @@ import { enableScreens } from 'react-native-screens';
 import { KanjiCameraScreen } from './src/screens/KanjiCameraScreen';
 import { DictionaryScreen } from './src/screens/DictionaryScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
+import { AppSettingsProvider } from './src/context/AppSettingsContext';
 
 enableScreens();
 
@@ -15,6 +16,7 @@ const Stack = createNativeStackNavigator();
 function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <AppSettingsProvider>
       <SafeAreaProvider>
         <NavigationContainer>
           <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -44,6 +46,7 @@ function App() {
           </Stack.Navigator>
         </NavigationContainer>
       </SafeAreaProvider>
+      </AppSettingsProvider>
     </GestureHandlerRootView>
   );
 }

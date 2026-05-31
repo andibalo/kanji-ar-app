@@ -1,17 +1,29 @@
 import React from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppSettings } from '../context/AppSettingsContext';
 
-type RowProps = { label: string; description?: string };
+type RowProps = {
+  label: string;
+  description?: string;
+  value?: boolean;
+  onValueChange?: (v: boolean) => void;
+};
 
-function SettingRow({ label, description }: RowProps) {
+function SettingRow({ label, description, value = false, onValueChange }: RowProps) {
   return (
     <View style={styles.row}>
       <View style={styles.rowText}>
         <Text style={styles.label}>{label}</Text>
         {!!description && <Text style={styles.description}>{description}</Text>}
       </View>
-      <Switch value={false} disabled trackColor={{ true: '#FFD700' }} />
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        disabled={!onValueChange}
+        trackColor={{ false: '#3A3A5A', true: '#FFD700' }}
+        thumbColor={value ? '#1A1A2E' : '#888'}
+      />
     </View>
   );
 }
@@ -29,30 +41,20 @@ function Section({ title, children }: SectionProps) {
 
 export function SettingsScreen() {
   const { bottom } = useSafeAreaInsets();
+  const { highPerformanceMode, setHighPerformanceMode } = useAppSettings();
 
   return (
     <View style={[styles.container, { paddingBottom: bottom }]}>
-      <Section title="Scanning">
-        <SettingRow label="Auto-scan on launch" description="Start scanning when app opens" />
-        <SettingRow label="Haptic feedback" description="Vibrate when kanji is detected" />
+      <Section title="Scanner">
+        <SettingRow
+          label="High Performance Mode"
+          description="Increases scanner frame rate to detect kanji faster but may slow down overall app performance"
+          value={highPerformanceMode}
+          onValueChange={setHighPerformanceMode}
+        />
       </Section>
-
-      <Section title="OCR">
-        <SettingRow label="High accuracy mode" description="Slower but more accurate recognition" />
-        <SettingRow label="Scan hiragana" description="Include hiragana in results" />
-      </Section>
-
-      <Section title="Dictionary">
-        <SettingRow label="Show furigana" description="Display readings above kanji" />
-        <SettingRow label="JLPT filter" description="Only show words from your JLPT level" />
-      </Section>
-
-      <Section title="Appearance">
-        <SettingRow label="Dark overlay" description="Dim areas outside the scan region" />
-      </Section>
-
       <View style={styles.footer}>
-        <Text style={styles.footerText}>KanjiAR · Version 0.0.1</Text>
+        <Text style={styles.footerText}>KanjiCamera · Version 0.0.1</Text>
       </View>
     </View>
   );
@@ -109,6 +111,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 12,
-    color: '#444',
+    color: '#666',
+    marginBottom: 8,
   },
 });

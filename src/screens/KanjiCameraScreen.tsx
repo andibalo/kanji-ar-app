@@ -27,10 +27,8 @@ import { KanjiScrollList } from '../components/KanjiScrollList';
 import { ScanRegionOverlay } from '../components/ScanRegionOverlay';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { useJishoLookup } from '../hooks/useJishoLookup';
+import { useAppSettings } from '../context/AppSettingsContext';
 import type { BlockData, ScanRegionPercentage } from '../types/recognition';
-
-// Process ~4 frames per second at 30fps camera
-const FRAME_SKIP = 10;
 
 // Default scan region — centred horizontal band
 const DEFAULT_REGION: ScanRegionPercentage = {
@@ -57,6 +55,7 @@ export function KanjiCameraScreen() {
   const frameCountRef = useRef(0);
   const previewSizeRef = useRef({ width: 0, height: 0 });
 
+  const { frameSkip } = useAppSettings();
   const { state: jishoState, lookup, reset } = useJishoLookup();
   const { scanText } = useTextRecognition({ language: 'japanese' });
 
@@ -115,7 +114,7 @@ export function KanjiCameraScreen() {
       'worklet';
       if (!isScanning) return;
       frameCountRef.current++;
-      if (frameCountRef.current % FRAME_SKIP !== 0) return;
+      if (frameCountRef.current % frameSkip !== 0) return;
 
       const result = scanText(frame);
       if (result && result.blocks && result.blocks.length > 0) {
@@ -125,7 +124,7 @@ export function KanjiCameraScreen() {
           previewSizeRef.current.width, previewSizeRef.current.height);
       }
     },
-    [isScanning, scanText, scanRegion, updateBlocks],
+    [isScanning, scanText, scanRegion, updateBlocks, frameSkip],
   );
 
   useEffect(() => {
@@ -158,7 +157,16 @@ export function KanjiCameraScreen() {
 
   const handleToggleScan = useCallback(() => {
     setIsScanning(prev => {
-      if (prev) { setBlocks([]); setWords([]); }
+      if (prev) {
+        setBlocks([]);
+        setWords([]);
+
+        ToastAndroid.show(`Stopped kanji scanner`, ToastAndroid.SHORT);
+
+        return !prev;
+      }
+
+      ToastAndroid.show(`Started kanji scanner`, ToastAndroid.SHORT);
       return !prev;
     });
   }, []);
