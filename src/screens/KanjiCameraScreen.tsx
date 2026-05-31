@@ -7,7 +7,11 @@ import {
   StatusBar,
   LayoutChangeEvent,
   ToastAndroid,
+  Modal,
+  Pressable,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Info } from 'lucide-react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import {
   useCameraDevice,
@@ -43,6 +47,8 @@ export function KanjiCameraScreen() {
   const device = useCameraDevice('back');
   const navigation = useNavigation();
   const isFocused = useIsFocused();
+  const { top: topInset } = useSafeAreaInsets();
+  const [infoVisible, setInfoVisible] = useState(false);
 
   const [blocks, setBlocks] = useState<KanjiBlock[]>([]);
   const [words, setWords] = useState<string[]>([]);
@@ -225,6 +231,15 @@ export function KanjiCameraScreen() {
       {/* Definition card (slides up on tap) */}
       <KanjiDetailCard state={jishoState} onDismiss={reset} />
 
+      {/* Info button — top-right, below status bar */}
+      <TouchableOpacity
+        style={[styles.infoBtn, { top: topInset + 12 }]}
+        onPress={() => setInfoVisible(true)}
+        activeOpacity={0.7}
+      >
+        <Info size={24} color="#FFD700" />
+      </TouchableOpacity>
+
       {/* Bottom navigation bar */}
       <BottomNavBar
         isScanning={isScanning}
@@ -232,6 +247,39 @@ export function KanjiCameraScreen() {
         onDictionary={() => navigation.navigate('Dictionary' as never)}
         onSettings={() => navigation.navigate('Settings' as never)}
       />
+
+      {/* Info modal */}
+      <Modal
+        visible={infoVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setInfoVisible(false)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setInfoVisible(false)}>
+          <Pressable style={styles.modalCard} onPress={() => {}}>
+            <Text style={styles.modalTitle}>How to use</Text>
+            <View style={styles.modalItem}>
+              <Text style={styles.modalBullet}>1.</Text>
+              <Text style={styles.modalText}>Point the camera at kanji or japanese characters</Text>
+            </View>
+            <View style={styles.modalItem}>
+              <Text style={styles.modalBullet}>2.</Text>
+              <Text style={styles.modalText}>Tap on scanned characters to get information on them</Text>
+            </View>
+            <View style={styles.modalItem}>
+              <Text style={styles.modalBullet}>3.</Text>
+              <Text style={styles.modalText}>Tap and hold scanned characters to copy them</Text>
+            </View>
+            <View style={styles.modalItem}>
+              <Text style={styles.modalBullet}>4.</Text>
+              <Text style={styles.modalText}>Adjust the scan region by dragging the corner handles</Text>
+            </View>
+            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setInfoVisible(false)}>
+              <Text style={styles.modalCloseBtnText}>Got it</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -264,5 +312,59 @@ const styles = StyleSheet.create({
     color: '#1A1A2E',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  infoBtn: {
+    position: 'absolute',
+    right: 16,
+    padding: 8,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  modalCard: {
+    width: '100%',
+    backgroundColor: '#1A1A2E',
+    borderRadius: 16,
+    padding: 24,
+    gap: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFD700',
+    marginBottom: 4,
+  },
+  modalItem: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modalBullet: {
+    fontSize: 15,
+    color: '#FFD700',
+    fontWeight: 'bold',
+    lineHeight: 22,
+  },
+  modalText: {
+    flex: 1,
+    fontSize: 15,
+    color: '#CCC',
+    lineHeight: 22,
+  },
+  modalCloseBtn: {
+    marginTop: 8,
+    alignSelf: 'flex-end',
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  modalCloseBtnText: {
+    color: '#1A1A2E',
+    fontWeight: 'bold',
+    fontSize: 15,
   },
 });
